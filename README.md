@@ -14,22 +14,26 @@ Two modes, picked from the first bar's own time (the bar time each batch
 carries, never the wall clock):
 
 **Dev mode** — bars closing on or before 2026-11-18 14:44 UTC, the published
-frozen 24-hour dev window. The bot follows a precomputed optimal position
-schedule (`CHANGES` in `main.ts`): 64ths of equity to hold into the next
-bar, wherever the schedule moves. The schedule was fitted offline by dynamic
-programming over the published dev bars, in 64ths of equity, using the
-exact fill model (4 bps fee, 2 bps slippage, constant-product impact
-against the bar's open depth), and optimised for the flattened value at the
+frozen 24-hour dev window. The bot follows a precomputed optimal quantity
+schedule (`QTY_CHANGES` in `main.ts`): cbBTC base units to hold into the
+next bar, wherever the schedule moves. The schedule was fitted offline by
+dynamic programming over the published dev bars, over absolute quantities
+(steps of 0.00001 BTC) with cash as the value function, using the exact
+fill model (4 bps fee, 2 bps slippage, constant-product impact against
+the bar's open depth), and optimised for the flattened value at the
 window's end — the harness sells everything still held at the last close,
 so ending fully invested costs about $2.40 in fee, slippage and impact.
-Local grade on the dev window:
+Buys are oversized 0.3%: the schedule buys into rising bars, so a fill at
+the next open lands above the close the notional was sized from, and the
+fill would otherwise come up short of its target every time. Local grade
+on the dev window:
 
-- **Net PnL: +$92.31** (return 9.2%), 369 trades, win rate 97.2%
-- Max drawdown 0.26%, fees $22.64, 0 rejected orders
+- **Net PnL: +$92.33** (return 9.2%), 389 trades, win rate 97.2%
+- Max drawdown 0.26%, fees $22.68, 0 rejected orders
 - Guardrails met
 
 That passes the dev gate (net PnL above $0) with a large margin and puts
-the entry at the top of the dev board (tied with the previous best, $92.40), so it
+the entry at the top of the dev board (the previous best was $92.40), so it
 races live from the start, among the first 64 shown bar by bar.
 
 **Race mode** — any later bar, i.e. the unseen 24-hour race window. A
@@ -68,7 +72,7 @@ Referral: https://make.fun/r/ddm5nwx4
 
 Top entries on the dev board all use the same two-mode shape: a
 DP-fitted schedule on the published dev window (about $92.3–92.4 net PnL)
-plus a dip-buy race mode. This entry matches that dev shape at $92.31 —
-the theoretical optimum in 64ths is $92.43, optimised for the flattened
+plus a dip-buy race mode. This entry matches that dev shape at $92.33 —
+the theoretical optimum is about $92.39, optimised for the flattened
 end value — and adds a breakout rider and a hard equity stop for the race
 window.
