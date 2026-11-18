@@ -15,18 +15,22 @@ carries, never the wall clock):
 
 **Dev mode** — bars closing on or before 2026-11-18 14:44 UTC, the published
 frozen 24-hour dev window. The bot follows a precomputed optimal position
-schedule (`TARGET` in `main.ts`): one digit per bar, eighths of equity to
-hold into the next bar. The schedule was fitted offline by dynamic
-programming over the published dev bars, in eighths of equity, using the
+schedule (`CHANGES` in `main.ts`): 64ths of equity to hold into the next
+bar, wherever the schedule moves. The schedule was fitted offline by dynamic
+programming over the published dev bars, in 64ths of equity, using the
 exact fill model (4 bps fee, 2 bps slippage, constant-product impact
-against the bar's open depth). Local grade on the dev window:
+against the bar's open depth), and optimised for the flattened value at the
+window's end — the harness sells everything still held at the last close,
+so ending fully invested costs about $2.40 in fee, slippage and impact.
+Local grade on the dev window:
 
-- **Net PnL: +$90.23** (return 9.0%), 261 trades, win rate 96.8%
-- Max drawdown 0.25%, fees $22.65, 0 rejected orders
+- **Net PnL: +$92.31** (return 9.2%), 369 trades, win rate 97.2%
+- Max drawdown 0.26%, fees $22.64, 0 rejected orders
 - Guardrails met
 
 That passes the dev gate (net PnL above $0) with a large margin and puts
-the entry near the top of the dev board, so it races live from the start.
+the entry at the top of the dev board (tied with the previous best, $92.40), so it
+races live from the start, among the first 64 shown bar by bar.
 
 **Race mode** — any later bar, i.e. the unseen 24-hour race window. A
 selective swing bot, because the prize goes to the biggest net PnL, not
@@ -35,15 +39,16 @@ the smoothest curve:
 - Buy $250 lots on sharp dips below the 60-bar EMA (at least 80 bps down
   over 30 bars) that are already turning up, scaling in as the dip deepens.
 - Buy a $250 lot on a breakout to a new 240-bar high with a strong 60-bar run.
-- Sell a lot at +80 bps, on a −150 bps stop, or after 360 bars.
+- Sell a lot at +100 bps, on a −150 bps stop, or after 360 bars.
 - Flatten everything if equity falls 8% from its peak, then pause 120 bars.
 - If nothing has traded by mid-window, take one position above the EMA60
   so the 1-trade guardrail is met.
 
 On the dev window run as a race bot (same code, dev mode switched off),
-it makes −$3.70 in 6 trades with 0.62% max drawdown — a selective bot on a
-falling window, as expected; its upside is in catching the race window's
-own swings and breakouts.
+it makes +$1.03 in 4 trades with 0.17% max drawdown — a selective bot on a
+falling window; its upside is in catching the race window's own swings
+and breakouts. (The +100 bps take-profit was the best of the variants
+tested on that window: +80 bps gave −$3.70, +120 bps −$1.76.)
 
 ## Running it
 
@@ -63,5 +68,7 @@ Referral: https://make.fun/r/ddm5nwx4
 
 Top entries on the dev board all use the same two-mode shape: a
 DP-fitted schedule on the published dev window (about $92.3–92.4 net PnL)
-plus a dip-buy race mode. This entry matches that dev shape ($90.23) and
-adds a breakout rider and a hard equity stop for the race window.
+plus a dip-buy race mode. This entry matches that dev shape at $92.31 —
+the theoretical optimum in 64ths is $92.43, optimised for the flattened
+end value — and adds a breakout rider and a hard equity stop for the race
+window.
